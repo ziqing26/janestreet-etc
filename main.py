@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # ~~~~~==============   HOW TO RUN   ==============~~~~~
 # 1) Configure things in CONFIGURATION section
-# 2) Change permissions: chmod +x bot.py
-# 3) Run in loop: while true; do ./bot.py --test prod-like; sleep 1; done
+# 2) Change permissions: chmod +x main.py
+# 3) Run in loop: while true; do ./main.py --test prod-like; sleep 1; done
 
 import argparse
 from collections import deque
@@ -10,6 +10,10 @@ from enum import Enum
 import time
 import socket
 import json
+
+from adr import adr_action
+from bond import bond_action
+# from xlf import xlf_action
 
 # ~~~~~============== CONFIGURATION  ==============~~~~~
 # Replace "REPLACEME" with your team name!
@@ -26,8 +30,45 @@ team_name = "TEAMNAME"
 # code is intended to be a working example, but it needs some improvement
 # before it will start making good trades!
 
+SERVER_STATUS = 0
+ORDER_ID = 0
+orders, conversions = {}, {}
+
+# Positions of symbols
+symbol_pos = {
+    "BOND": 0,
+    "VALBZ": 0,
+    "VALE": 0,
+    "GS": 0,
+    "MS": 0,
+    "WFC": 0,
+    "XLF": 0
+}
+
+# Books of symbols
+symbol_book = {
+    "BOND": {},
+    "VALBZ": {},
+    "VALE": {},
+    "GS": {},
+    "MS": {},
+    "WFC": {},
+    "XLF": {}
+}
+
+class Symbol(Enum):
+  BOND: str = "BOND"
+  GS: str = "GS"
+  MS: str = "MS"
+  USD: str = "USD"
+  VALBZ: str = "VALBZ"
+  VALE: str = "VALE"
+  WFC: str = "WFC"
+  XLF: str = "XLF"
 
 def main():
+    global ORDER_ID
+
     args = parse_arguments()
 
     exchange = ExchangeConnection(args=args)
@@ -38,11 +79,10 @@ def main():
     # have already bought/sold symbols and have non-zero positions.
     hello_message = exchange.read_message()
     print("First message from exchange:", hello_message)
-
-    # Send an order for BOND at a good price, but it is low enough that it is
-    # unlikely it will be traded against. Maybe there is a better price to
-    # pick? Also, you will need to send more orders over time.
-    exchange.send_add_message(order_id=1, symbol="BOND", dir=Dir.BUY, price=990, size=1)
+    ORDER_ID = 0
+    symbols = hello_message["symbols"]
+    for symbol in symbols:
+        symbol_pos[symbol["symbol"]] = symbol["position"]
 
     # Set up some variables to track the bid and ask price of a symbol. Right
     # now this doesn't track much information, but it's enough to get a sense
@@ -81,25 +121,160 @@ def main():
         elif message["type"] == "fill":
             print(message)
         elif message["type"] == "book":
-            if message["symbol"] == "VALE":
-                def best_price(side):
-                    if message[side]:
-                        return message[side][0][0]
+            symbol = message["symbol"]
+            buy = message["buy"]
+            sell = message["sell"]
 
-                vale_bid_price = best_price("buy")
-                vale_ask_price = best_price("sell")
+            # save order to book
+            symbol_book[symbol] = { "BUY": buy, "SELL": sell }
 
-                now = time.time()
+            # Act on BOND transaction
+            if symbol == "BOND":
+                responses = bond_action(buy, sell)
+                if responses:
+                    for res in responses:
+                        price = res["price"]
+                        size = res["size"]
+                        direction = res["dir"]
+                        exchange.send_add_message(ORDER_ID, symbol, direction, price, size)
+                        ORDER_ID += 1
+                    orders[ORDER_ID] = (direction, symbol, price, size)
+            
+            # # Act on VALE transaction
+            # dic = {}
+            # if symbol == "VALE":
+            #     def best_price(side):
+            #         if message[side]:
+            #             return message[side][0][0]
+                
+            #     def best_price_qty(side):
+            #         if message[side]:
+            #             return message[side][0][1]
 
-                if now > vale_last_print_time + 1:
-                    vale_last_print_time = now
-                    print(
-                        {
-                            "vale_bid_price": vale_bid_price,
-                            "vale_ask_price": vale_ask_price,
-                        }
-                    )
-        sleep(0.1)
+            #     vale_bid_price, vale_bid_qty = best_price("buy"), best_price_qty("buy")
+            #     vale_ask_price, vale_ask_qty = best_price("sell"), best_price_qty("sell")
+                
+            #     first = 1
+            #     now = time.time()
+            #     if first:
+            #         vale_last_print_time = now
+            #         first = 0
+
+            #     if now > vale_last_print_time + 1:
+            #         vale_last_print_time = now
+            #         print(
+            #             {
+            #                 "vale_bid_price": vale_bid_price,
+            #                 "vale_ask_price": vale_ask_price,
+            #             }
+            #         )
+            #         dic["vale_bid"] = [vale_bid_price, vale_bid_qty]
+            #         dic["vale_ask"] = [vale_ask_price, vale_ask_qty] 
+
+            # # Act on VALBZ transaction
+            # if symbol == "VALBZ":
+            #     def best_price(side):
+            #         if message[side]:
+            #             return message[side][0][0]
+                
+            #     def best_price_qty(side):
+            #         if message[side]:
+            #             return message[side][0][1]
+
+            #     valbz_bid_price, valbz_bid_qty = best_price("buy"), best_price_qty("buy")
+            #     valbz_ask_price, valbz_ask_qty = best_price("sell"), best_price_qty("sell")
+                
+            #     first = 1
+            #     now = time.time()
+            #     if first:
+            #         valbz_last_print_time = now
+            #         first = 0
+
+            #     if now > valbz_last_print_time + 1:
+            #         valbz_last_print_time = now
+            #         print(
+            #             {
+            #                 "valbz_bid_price": valbz_bid_price,
+            #                 "valbz_ask_price": valbz_ask_price,
+            #             }
+            #         )
+            #         dic["valbz_bid"] = [valbz_bid_price, valbz_bid_qty]
+            #         dic["valbz_ask"] = [valbz_ask_price, valbz_ask_qty] 
+            
+            # if dic.get("valbz_bid") != None and dic.get("vale_bid") != None :
+            #     responses = adr_action(dic)
+
+            #     if responses:
+            #             for res in responses:
+            #                 _type =  res["type"]
+            #                 price = res["price"]
+            #                 size = res["size"]
+            #                 direction = res["dir"]
+            #                 symbol = res["symbol"]
+            #                 if _type == "add":
+            #                     exchange.send_add_message(ORDER_ID, symbol, direction, price, size)
+            #                 else:
+            #                     exchange.send_convert_message(ORDER_ID, symbol, direction, size)
+            #                 ORDER_ID += 1
+            #             orders[ORDER_ID] = (direction, symbol, price, size)
+              
+            # Act on XLF transaction
+            # if message["symbol"] == str(Symbol.XLF):
+            #     pass
+            #     # trade for XLF
+            #     responses = xlf_action(symbol_book[str(Symbol.BOND)], symbol_book[str(Symbol.GS)],
+            #                     symbol_book[str(Symbol.MS)], symbol_book[str(Symbol.WFC)],
+            #                     symbol_book[str(Symbol.XLF)])
+            #     if responses:
+            #         for response in responses:
+            #             response["order_id"] = ORDER_ID
+                # if responses:
+                #     for response in responses:
+                #         response["order_id"] = ORDER_ID
+                #         write_to_exchange(exchange, response)
+                #         if response["type"] != str(Action.CONVERT):
+                #             orders[ORDER_ID] = (response["dir"], response["symbol"], response["price"], response["size"], response["size"])
+                #             if response["dir"] == str(Direction.BUY):
+                #                 symbol_positions[str(Symbol.USD)] = symbol_positions[str(Symbol.USD)] - (response["price"] * response["size"])
+                #         else:
+                #             conversions[ORDER_ID] = (response["dir"], response["symbol"], response["size"])
+                #         ORDER_ID += 1
+
+
+        elif message["type"] == "ack":  
+            _order_id = message["order_id"]
+            if _order_id in orders:
+                order = orders[_order_id]
+                print("Order {}: Dir - {}, Symbol - {}, Price - {}, Orig - {} has been entered into the books"
+                        .format(_order_id, order[0], order[1], order[2], order[3], order[4]))
+            else:
+                conversion = conversions[_order_id]
+                print("Order {}: Dir - {}, Symbol - {}, Size - {} has been converted"
+                        .format(_order_id, conversion[0], conversion[1], conversion[2]))
+                if conversion[1] == str(Symbol.VALE):
+                    symbol_pos[str(Symbol.VALE)] -= conversion[2]
+                    symbol_pos[str(Symbol.VALBZ)] += conversion[2]
+                    symbol_pos[str(Symbol.USD)] -= 10
+                elif conversion[1] == str(Symbol.XLF):
+                    if conversion[0] == "BUY":
+                        symbol_pos[str(Symbol.BOND)] -= 3
+                        symbol_pos[str(Symbol.GS)] -= 2
+                        symbol_pos[str(Symbol.MS)] -= 3
+                        symbol_pos[str(Symbol.WFC)] -= 2
+                        symbol_pos[str(Symbol.XLF)] += 10
+                    elif conversion[0] == "SELL":
+                        symbol_pos[str(Symbol.BOND)] += 3
+                        symbol_pos[str(Symbol.GS)] += 2
+                        symbol_pos[str(Symbol.MS)] += 3
+                        symbol_pos[str(Symbol.WFC)] += 2
+                        symbol_pos[str(Symbol.XLF)] -= 10
+                    symbol_pos[str(Symbol.USD)] -= 100
+
+                print("CURRENT POSITION: {}".format(symbol_pos))
+
+        
+        time.sleep(0.1)
+
 
 
 # ~~~~~============== PROVIDED CODE ==============~~~~~
