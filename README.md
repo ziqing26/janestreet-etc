@@ -3,6 +3,6 @@
 ## Team: TeamName
 
 - Wu Yujin ([@](https://github.com/))
-- Li Jianhan ([@](https://github.com/iamjamestan))
+- Li Jianhan ([@](https://github.com/))
 - Hong Ai Ling([@ailing35](https://github.com/ailing35))
 - Zhang Ziqing ([@zziqing26](https://github.com/ziqing26))
