@@ -137,8 +137,8 @@ def main():
                         size = res["size"]
                         direction = res["dir"]
                         exchange.send_add_message(ORDER_ID, symbol, direction, price, size)
+                        orders[ORDER_ID] = (direction, symbol, price, size)
                         ORDER_ID += 1
-                    orders[ORDER_ID] = (direction, symbol, price, size)
             
             # # Act on VALE transaction
             # dic = {}
