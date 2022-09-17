@@ -241,36 +241,36 @@ def main():
                 #         ORDER_ID += 1
 
 
-        elif message["type"] == "ack":  
-            _order_id = message["order_id"]
-            if _order_id in orders:
-                order = orders[_order_id]
-                print("Order {}: Dir - {}, Symbol - {}, Price - {}, Orig - {} has been entered into the books"
-                        .format(_order_id, order[0], order[1], order[2], order[3], order[4]))
-            else:
-                conversion = conversions[_order_id]
-                print("Order {}: Dir - {}, Symbol - {}, Size - {} has been converted"
-                        .format(_order_id, conversion[0], conversion[1], conversion[2]))
-                if conversion[1] == str(Symbol.VALE):
-                    symbol_pos[str(Symbol.VALE)] -= conversion[2]
-                    symbol_pos[str(Symbol.VALBZ)] += conversion[2]
-                    symbol_pos[str(Symbol.USD)] -= 10
-                elif conversion[1] == str(Symbol.XLF):
-                    if conversion[0] == "BUY":
-                        symbol_pos[str(Symbol.BOND)] -= 3
-                        symbol_pos[str(Symbol.GS)] -= 2
-                        symbol_pos[str(Symbol.MS)] -= 3
-                        symbol_pos[str(Symbol.WFC)] -= 2
-                        symbol_pos[str(Symbol.XLF)] += 10
-                    elif conversion[0] == "SELL":
-                        symbol_pos[str(Symbol.BOND)] += 3
-                        symbol_pos[str(Symbol.GS)] += 2
-                        symbol_pos[str(Symbol.MS)] += 3
-                        symbol_pos[str(Symbol.WFC)] += 2
-                        symbol_pos[str(Symbol.XLF)] -= 10
-                    symbol_pos[str(Symbol.USD)] -= 100
+        # elif message["type"] == "ack":  
+        #     _order_id = message["order_id"]
+        #     if _order_id in orders:
+        #         order = orders[_order_id]
+        #         print("Order {}: Dir - {}, Symbol - {}, Price - {}, Orig - {} has been entered into the books"
+        #                 .format(_order_id, order[0], order[1], order[2], order[3], order[4]))
+        #     else:
+        #         conversion = conversions[_order_id]
+        #         print("Order {}: Dir - {}, Symbol - {}, Size - {} has been converted"
+        #                 .format(_order_id, conversion[0], conversion[1], conversion[2]))
+        #         if conversion[1] == str(Symbol.VALE):
+        #             symbol_pos[str(Symbol.VALE)] -= conversion[2]
+        #             symbol_pos[str(Symbol.VALBZ)] += conversion[2]
+        #             symbol_pos[str(Symbol.USD)] -= 10
+        #         elif conversion[1] == str(Symbol.XLF):
+        #             if conversion[0] == "BUY":
+        #                 symbol_pos[str(Symbol.BOND)] -= 3
+        #                 symbol_pos[str(Symbol.GS)] -= 2
+        #                 symbol_pos[str(Symbol.MS)] -= 3
+        #                 symbol_pos[str(Symbol.WFC)] -= 2
+        #                 symbol_pos[str(Symbol.XLF)] += 10
+        #             elif conversion[0] == "SELL":
+        #                 symbol_pos[str(Symbol.BOND)] += 3
+        #                 symbol_pos[str(Symbol.GS)] += 2
+        #                 symbol_pos[str(Symbol.MS)] += 3
+        #                 symbol_pos[str(Symbol.WFC)] += 2
+        #                 symbol_pos[str(Symbol.XLF)] -= 10
+        #             symbol_pos[str(Symbol.USD)] -= 100
 
-                print("CURRENT POSITION: {}".format(symbol_pos))
+        #         print("CURRENT POSITION: {}".format(symbol_pos))
 
         
         time.sleep(0.1)
@@ -414,8 +414,4 @@ def parse_arguments():
 
 if __name__ == "__main__":
     # Check that [team_name] has been updated.
-    assert (
-        team_name == "TEAMNAME"
-    ), "Correct Name"
-
     main()
