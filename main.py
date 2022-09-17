@@ -105,12 +105,12 @@ def main():
     # rate-limited and ignored. Please, don't do that!
     dic = {}
     while True:
-        exchange.send_add_message(order_id=ORDER_ID, symbol="BOND", dir="BUY", price=999, size=20)
-        orders[ORDER_ID] = ("BUY", "BOND", 999, 20)
-        ORDER_ID += 1
-        exchange.send_add_message(ORDER_ID, "BOND", "SELL", 1001, 20)
-        orders[ORDER_ID] = ("SELL", "BOND", 1001, 20)
-        ORDER_ID += 1
+        # exchange.send_add_message(order_id=ORDER_ID, symbol="BOND", dir="BUY", price=999, size=20)
+        # orders[ORDER_ID] = ("BUY", "BOND", 999, 20)
+        # ORDER_ID += 1
+        # exchange.send_add_message(ORDER_ID, "BOND", "SELL", 1001, 20)
+        # orders[ORDER_ID] = ("SELL", "BOND", 1001, 20)
+        # ORDER_ID += 1
         message = exchange.read_message()
         # Some of the message types below happen infrequently and contain
         # important information to help you understand what your bot is doing,
@@ -209,48 +209,48 @@ def main():
                 dic["valbz_bid"] = [valbz_bid_price, valbz_bid_qty]
                 dic["valbz_ask"] = [valbz_ask_price, valbz_ask_qty] 
             
-            if dic.get("valbz_bid") != None and dic.get("vale_bid") != None and dic.get("valbz_bid")[0] and dic.get("vale_bid")[0]:
-                responses = adr_action(dic, symbol_pos)
+            # if dic.get("valbz_bid") != None and dic.get("vale_bid") != None and dic.get("valbz_bid")[0] and dic.get("vale_bid")[0]:
+            #     responses = adr_action(dic, symbol_pos)
 
-                if responses:
-                    for res in responses:
-                        _type =  res["type"]
-                        size = res["size"]
-                        direction = res["dir"]
-                        symbol = res["symbol"]
-                        if _type == "ADD":
-                            price = res["price"]
-                            exchange.send_add_message(ORDER_ID, symbol, direction, price, size)
-                            orders[ORDER_ID] = (direction, symbol, price, size)
-                            print("ORDERS in if", orders)
-                        else:
-                            exchange.send_convert_message(ORDER_ID, symbol, direction, size)
-                            conversions[ORDER_ID] = (direction, symbol, size)
-                            print("CONVERSIONS in else", conversions)
+            #     if responses:
+            #         for res in responses:
+            #             _type =  res["type"]
+            #             size = res["size"]
+            #             direction = res["dir"]
+            #             symbol = res["symbol"]
+            #             if _type == "ADD":
+            #                 price = res["price"]
+            #                 exchange.send_add_message(ORDER_ID, symbol, direction, price, size)
+            #                 orders[ORDER_ID] = (direction, symbol, price, size)
+            #                 # print("ORDERS in if", orders)
+            #             else:
+            #                 exchange.send_convert_message(ORDER_ID, symbol, direction, size)
+            #                 conversions[ORDER_ID] = (direction, symbol, size)
+            #                 # print("CONVERSIONS in else", conversions)
 
-                        ORDER_ID += 1
+            #             ORDER_ID += 1
               
             # Act on XLF transaction
-            # if message["symbol"] == "XLF":
-            #     responses = xlf_action(symbol_book["BOND"], symbol_book["GS"],
-            #                     symbol_book["MS"], symbol_book["WFC"],
-            #                     symbol_book["XLF"])
-            #     if responses:
-            #         for response in responses:
-            #             response["order_id"] = ORDER_ID
-            #             type_res = response["type"]
-            #             if type_res == "ADD":
-            #                 exchange.send_add_message(ORDER_ID, res["symbol"], res["dir"], res["price"], res["size"])
-            #             elif type_res == "CONVERT":
-            #                 exchange.send_convert_message(ORDER_ID, res["symbol"], res["dir"], res["size"])
+            if message["symbol"] == "XLF":
+                responses = xlf_action(symbol_book["BOND"], symbol_book["GS"],
+                                symbol_book["MS"], symbol_book["WFC"],
+                                symbol_book["XLF"])
+                if responses:
+                    for response in responses:
+                        response["order_id"] = ORDER_ID
+                        type_res = response["type"]
+                        if type_res == "ADD":
+                            exchange.send_add_message(ORDER_ID, response["symbol"], response["dir"], response["price"], response["size"])
+                        elif type_res == "CONVERT":
+                            exchange.send_convert_message(ORDER_ID, response["symbol"], response["dir"], response["size"])
 
-            #             if type_res != "CONVERT":
-            #                 orders[ORDER_ID] = (response["dir"], response["symbol"], response["price"], response["size"])
-            #                 if response["dir"] == "BUY":
-            #                     symbol_pos["USD"] = symbol_pos["USD"] - (response["price"] * response["size"])
-            #             else:
-            #                 conversions[ORDER_ID] = (response["dir"], response["symbol"], response["size"])
-            #             ORDER_ID += 1
+                        if type_res != "CONVERT":
+                            orders[ORDER_ID] = (response["dir"], response["symbol"], response["price"], response["size"])
+                            if response["dir"] == "BUY":
+                                symbol_pos["USD"] = symbol_pos["USD"] - (response["price"] * response["size"])
+                        else:
+                            conversions[ORDER_ID] = (response["dir"], response["symbol"], response["size"])
+                        ORDER_ID += 1
 
 
         elif message["type"] == "ack":  
@@ -260,8 +260,8 @@ def main():
                 print("Order {}: Dir - {}, Symbol - {}, Price - {}, Size - {} has been entered into the books"
                         .format(_order_id, order[0], order[1], order[2], order[3]))
             else:
-                print("CONVERSIONS", conversions)
-                print("order_id", _order_id)
+                # print("CONVERSIONS", conversions)
+                # print("order_id", _order_id)
                 conversion = conversions[_order_id]
                 print("Order {}: Dir - {}, Symbol - {}, Size - {} has been converted"
                         .format(_order_id, conversion[0], conversion[1], conversion[2]))
