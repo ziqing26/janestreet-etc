@@ -3,13 +3,13 @@ CONVERSION_COST = 100
 UNIT_SIZE = 10
 
 def get_xlf_value(bond, gs, ms, wfc, dir):
-    return 3 * bond[dir][0][0] + 2 * gs[dir][0][0] + 3 * ms[dir][0][0] + 2 * wfc[dir][0][0]
+    return 3 * 1000 + 2 * gs[dir][0][0] + 3 * ms[dir][0][0] + 2 * wfc[dir][0][0]
 
 def __transact_xlf_constituents(bond, gs, ms, wfc, direction):
     opp_dir = "BUY" if direction == "SELL" else "SELL"
     transact = [
-        {"type": "ADD", "symbol": "BOND", "dir": direction,
-            "price": bond[opp_dir][0][0], "size": 3},
+        # {"type": "ADD", "symbol": "BOND", "dir": direction,
+        #     "price": bond[opp_dir][0][0], "size": 3},
         {"type": "ADD", "symbol": "GS", "dir": direction,
             "price": gs[opp_dir][0][0], "size": 2},
         {"type": "ADD", "symbol": "MS", "dir": direction,
@@ -26,7 +26,6 @@ def sell_at_xlf(bond, gs, ms, wfc, xlf):
                 "price": xlf["BUY"][0][0], "size": 10}]
     return buy_xlf_constituents + convert + sell_xlf
 
-
 def buy_at_xlf(bond, gs, ms, wfc, xlf):
     sell_xlf_constituents = __transact_xlf_constituents(bond, gs, ms, wfc, "SELL")
     return [
@@ -36,6 +35,13 @@ def buy_at_xlf(bond, gs, ms, wfc, xlf):
         ] + sell_xlf_constituents
 
 def xlf_action(bond, gs, ms, wfc, xlf):
+    if not (gs and ms and wfc and xlf):
+        return []
+    if not (gs["BUY"] and ms["BUY"] and wfc["BUY"] and xlf["BUY"]):
+        return []
+    if not (gs["SELL"] and ms["SELL"] and wfc["SELL"] and xlf["SELL"]):
+        return []
+
     if get_xlf_value(bond, gs, ms, wfc, "SELL") + CONVERSION_COST + BUFFER_SIZE < (xlf["BUY"][0][0] * UNIT_SIZE):
         return sell_at_xlf(bond, gs, ms, wfc, xlf)
     elif get_xlf_value(bond, gs, ms, wfc, "BUY") > (xlf["SELL"][0][0] * UNIT_SIZE + CONVERSION_COST + BUFFER_SIZE):
